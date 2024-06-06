@@ -163,3 +163,5 @@ cython_debug/
 
 # put everything relate to data you don't want to share
 data
+*.out
+wandb
