@@ -20,7 +20,7 @@ import json
 from unsloth import FastLanguageModel
 import torch
 from trl import SFTTrainer
-from transformers import TrainingArguments
+from transformers import TrainingArguments, Seq2SeqTrainingArguments
 
 # %%
 max_seq_length = 2048  # Choose any! We auto support RoPE Scaling internally!
@@ -167,7 +167,7 @@ trainer = SFTTrainer(
     max_seq_length=max_seq_length,
     dataset_num_proc=2,
     packing=False,  # Can make training 5x faster for short sequences.
-    args=TrainingArguments(
+    args=Seq2SeqTrainingArguments(
         output_dir="data/models",
         run_name="qa_telcom",
         per_device_train_batch_size=2,
@@ -191,6 +191,7 @@ trainer = SFTTrainer(
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         save_only_model=True,
+        predict_with_generate=True,
     ),
 )
 
