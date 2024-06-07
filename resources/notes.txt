@@ -22,3 +22,5 @@ For more in-depth information about the dataset and the generation process, plea
 
 https://medium.com/@mauryaanoop3/fine-tuning-phi-3-with-unsloth-for-superior-performance-on-custom-data-2c14b3c1e90b
 Fine-Tuning Phi-3 with Unsloth for Superior Performance on Custom Data:
+
+https://github.com/microsoft/Phi-3CookBook/blob/main/code/04.Finetuning/Phi-3-finetune-lora-python.ipynb
