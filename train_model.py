@@ -14,8 +14,6 @@ os.environ["WANDB_NOTEBOOK_NAME"] = "qa_telcom"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "1"
 
-import json
-
 # %%
 from unsloth import FastLanguageModel
 import torch
@@ -66,36 +64,14 @@ print(model)
 
 # %%
 from datasets import Dataset
-
-
-def create_dataset(data: dict):
-    def patch_raw(raw: dict):
-        for i in range(2, 6):
-            raw[f"option {i}"] = raw.get(f"option {i}")
-        return raw
-
-    data_pashed = [patch_raw(raw) for raw in data.values()]
-    data_pashed = Dataset.from_list(data_pashed)
-    return data_pashed
-
+from zindi_llm.dataset import load_datasets
 
 # %%
-training = json.load(open("data/zindi_data/TeleQnA_training.json"))
-testing = json.load(open("data/zindi_data/TeleQnA_testing1.json"))
-extra_dataset = json.load(open("data/TeleQnA.json"))
-
-
-print(len(training), len(testing), len(extra_dataset))
+train_ds, val_ds, test_ds = load_datasets(True, False)
+print(len(train_ds), len(val_ds), len(test_ds))
 
 # %%
-training_ds = create_dataset(training)
-testing_ds = create_dataset(testing)
-extra_ds = create_dataset(extra_dataset)
-
-print(len(training_ds), len(testing_ds), len(extra_ds))
-
-# %%
-print(training_ds[:5])
+print(train_ds[:5])
 
 # %%
 alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
@@ -145,29 +121,30 @@ def formatting_prompts_func(examples: dict[str, str]):
 
 
 # %%
-training_ds = training_ds.map(formatting_prompts_func, batched=True)
-extra_ds = extra_ds.map(formatting_prompts_func, batched=True)
+train_ds = train_ds.map(formatting_prompts_func, batched=True)
+val_ds = val_ds.map(formatting_prompts_func, batched=True)
+test_ds = test_ds.map(formatting_prompts_func, batched=True)
 
 # %%
-print(training_ds)
+print(train_ds)
 
 # %%
-print(extra_ds)
+print(val_ds)
 
 # %%
-print(extra_ds[:5]["text"])
+print(val_ds[:5]["text"])
 
 # %%
 trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
-    train_dataset=extra_ds,
-    eval_dataset=training_ds,
+    train_dataset=train_ds,
+    eval_dataset=val_ds,
     dataset_text_field="text",
     max_seq_length=max_seq_length,
     dataset_num_proc=2,
     packing=False,  # Can make training 5x faster for short sequences.
-    args=Seq2SeqTrainingArguments(
+    args=TrainingArguments(
         output_dir="data/models",
         run_name="qa_telcom",
         per_device_train_batch_size=2,
@@ -210,13 +187,10 @@ trainer.evaluate()
 trainer_stats = trainer.train()
 
 # %%
-trainer_stats.metrics
-
-# %%
-model.save_pretrained("data/models/model1")
-tokenizer.save_pretrained("data/models/model1")
+print(trainer_stats.metrics)
 
 # %%
 trainer.evaluate()
 
 # %%
+trainer.evaluate(test_ds, metric_key_prefix="test")

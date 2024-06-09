@@ -1,3 +1,23 @@
+Specializing Large Language Models for Telecom Networks by ITU AI/ML in 5G Challenge
+The dataset shared with the participants is composed by multiple choice questions related to 3GPP standards included in the TeleQnA. TeleQnA is a comprehensive dataset tailored to assess the knowledge of LLMs in the field of telecommunications.
+
+It encompasses 1827 multiple-choice questions distributed across two distinct categories:
+
+Standards overview: This category consists of 318 questions related to summaries of standards from 3GPP standards.
+Standards specifications: With 1509 questions, this category explores the technical specifications and practical implementations of telecommunications systems, leveraging information from 3GPP documents.
+The 1827 MCQs are also divided in 1461 and 366 questions that compose the train and test1 sets.
+
+For more in-depth information about the dataset and the generation process, please refer to [2].
+
+Each question is represented in JSON format, comprising five distinct fields:
+
+Question: This field consists of a string that presents the question associated with a specific concept within the telecommunications domain.
+Options: This field comprises a set of strings representing the various answer options.
+Answer: This field contains a string that adheres to the format ’option ID: Answer’ and presents the correct response to the question. A single option is correct; however, options may include choices like “All of the Above” or “Both options 1 and 2”.
+Explanation: This field encompasses a string that clarifies the reasoning behind the correct answer.
+Category: This field includes a label identifying the source category (e.g., lexicon, research overview, etc.).
+https://zindi.africa/competitions/specializing-large-language-models-for-telecom-networks/data
+
 Telco-RAG: Retrieval-Augmented Generation for Telecommunications
 Telco-RAG is a specialized Retrieval-Augmented Generation (RAG) framework designed to tackle the unique challenges presented by the telecommunications industry, particularly when working with complex and rapidly evolving 3GPP documents.
 https://github.com/netop-team/telco-rag
