@@ -26,7 +26,7 @@ def load_datasets(use_extra_dataset: bool = False, use_all_class: bool = False):
     if not use_extra_dataset:
         train = loads(TRAINING_PATH)
         train = create_dataset(train)
-        train = train.train_test_split(test_size=0.1)
+        train = train.train_test_split(test_size=0.1, stratify_by_column="category")
         return train["train"], train["test"], test
 
     val = loads(TESTING_PATH)
@@ -40,5 +40,5 @@ def load_datasets(use_extra_dataset: bool = False, use_all_class: bool = False):
             if value["category"] in TESTING_KNOWLEDGE
         }
     train = create_dataset(train)
-    train = train.train_test_split(test_size=0.1)
+    train = train.train_test_split(test_size=0.1, stratify_by_column="category")
     return train["train"], train["test"], test

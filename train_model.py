@@ -12,7 +12,7 @@ os.environ["WANDB_WATCH"] = "none"
 os.environ["WANDB_NOTEBOOK_NAME"] = "qa_telcom"
 
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
 # %%
 from unsloth import FastLanguageModel
@@ -67,7 +67,7 @@ from datasets import Dataset
 from zindi_llm.dataset import load_datasets
 
 # %%
-train_ds, val_ds, test_ds = load_datasets(True, False)
+train_ds, val_ds, test_ds = load_datasets(True, True)
 print(len(train_ds), len(val_ds), len(test_ds))
 
 # %%
@@ -145,7 +145,7 @@ trainer = SFTTrainer(
     dataset_num_proc=2,
     packing=False,  # Can make training 5x faster for short sequences.
     args=TrainingArguments(
-        output_dir="data/models",
+        output_dir="data/models/All",
         run_name="qa_telcom",
         per_device_train_batch_size=2,
         gradient_accumulation_steps=4,
@@ -168,7 +168,6 @@ trainer = SFTTrainer(
         load_best_model_at_end=True,
         metric_for_best_model="loss",
         save_only_model=True,
-        predict_with_generate=True,
     ),
 )
 
@@ -193,4 +192,4 @@ print(trainer_stats.metrics)
 trainer.evaluate()
 
 # %%
-trainer.evaluate(test_ds, metric_key_prefix="test")
+# trainer.evaluate(test_ds, metric_key_prefix="test")
