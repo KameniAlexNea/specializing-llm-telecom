@@ -2,4 +2,4 @@ pip install torch torchvision torchaudio xformers --index-url https://download.p
 pip install transformers[torch]
 pip install "unsloth[colab-new] @ git+https://github.com/unslothai/unsloth.git"
 pip install --no-deps trl peft accelerate bitsandbytes
-pip install matplotlib pickleshare pandas numpy python-docx
+pip install -r requirements.txt
