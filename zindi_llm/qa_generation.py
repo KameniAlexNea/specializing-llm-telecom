@@ -1,4 +1,5 @@
 from dataclasses import dataclass
+import gc
 from langchain_core.pydantic_v1 import BaseModel, Field
 from docx import Document
 from tqdm import tqdm
@@ -12,14 +13,15 @@ import os
 import uuid
 
 
-max_new_tokens = 2096
+max_new_tokens = 2048
 max_seq_length = 4096  # Choose any! We auto support RoPE Scaling internally!
 dtype = (
     None  # None for auto detection. Float16 for Tesla T4, V100, Bfloat16 for Ampere+
 )
 load_in_4bit = True  # Use 4bit quantization to reduce memory usage. Can be False.
+NUM_QUESTIONS = 5
 
-MODEL_PATH = "unsloth/llama-3-8b-Instruct-bnb-4bit"
+MODEL_PATH = "unsloth/gemma-1.1-2b-it" # "unsloth/llama-3-8b-Instruct-bnb-4bit"
 
 QUERY = """
 Please generate <num_questions>{NUM_QUESTIONS}</num_questions> questions based on the provided context.
@@ -77,6 +79,9 @@ def load_model():
 def make_prediction(
     model: PeftModelForCausalLM, tokenizer: AutoTokenizer, texts: list[str]
 ) -> list[str]:
+    texts = [
+        QUERY.format(NUM_QUESTIONS=NUM_QUESTIONS, CONTEXT=text) for text in texts
+    ]
     inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True).to(
         "cuda"
     )
@@ -105,4 +110,5 @@ def make_document_prediction(path: str, batch_size: int = 8, file_name: str = "d
     for i in tqdm(range(0, len(texts), batch_size)):
         text = texts[i: i+batch_size]
         llm_answers = make_prediction(model, tokenizer, text)
-        map(lambda x: save_text(x, folder), llm_answers)
+        list(map(lambda x: save_text(x, folder), llm_answers))
+        gc.collect()
