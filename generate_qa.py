@@ -3,7 +3,7 @@ import os
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
-os.environ["CUDA_VISIBLE_DEVICES"] = "1"
+os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 from zindi_llm.qa_generation import make_document_prediction
 
 files = sorted(glob("data/zindi_data/rel18/*.docx"))

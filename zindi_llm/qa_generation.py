@@ -1,12 +1,9 @@
-from dataclasses import dataclass
 import gc
-from langchain_core.pydantic_v1 import BaseModel, Field
 from docx import Document
 from tqdm import tqdm
 from unsloth import FastLanguageModel
 import torch
-from trl import SFTTrainer
-from transformers import TrainingArguments, AutoTokenizer
+from transformers import AutoTokenizer
 from peft import PeftModelForCausalLM
 import random
 import os
@@ -21,7 +18,7 @@ dtype = (
 load_in_4bit = True  # Use 4bit quantization to reduce memory usage. Can be False.
 NUM_QUESTIONS = 5
 
-MODEL_PATH = "unsloth/gemma-1.1-2b-it" # "unsloth/llama-3-8b-Instruct-bnb-4bit"
+MODEL_PATH = "unsloth/llama-3-8b-Instruct-bnb-4bit"  # "unsloth/llama-3-8b-Instruct-bnb-4bit"
 
 QUERY = """
 Please generate <num_questions>{NUM_QUESTIONS}</num_questions> questions based on the provided context.
@@ -54,10 +51,12 @@ Here is the context to generate questions from:
 </context>
 """
 
+
 def save_text(text: str, base_folder: str = "data/generated_qa/"):
     name = str(uuid.uuid1()) + ".txt"
     with open(os.path.join(base_folder, name), "w") as f:
         f.write(text)
+
 
 def load_model():
     result: tuple[PeftModelForCausalLM, AutoTokenizer] = (
@@ -76,11 +75,25 @@ def load_model():
     return model, tokenizer
 
 
+def prepare_prompt(text, tokenizer: AutoTokenizer):
+    chat = [
+        {"role": "user", "content": text},
+    ]
+    prompt = tokenizer.apply_chat_template(
+        chat, tokenize=False, add_generation_prompt=True
+    )
+    return prompt
+
+
+@torch.no_grad()
 def make_prediction(
     model: PeftModelForCausalLM, tokenizer: AutoTokenizer, texts: list[str]
 ) -> list[str]:
     texts = [
-        QUERY.format(NUM_QUESTIONS=NUM_QUESTIONS, CONTEXT=text) for text in texts
+        prepare_prompt(
+            QUERY.format(NUM_QUESTIONS=NUM_QUESTIONS, CONTEXT=text), tokenizer
+        )
+        for text in texts
     ]
     inputs = tokenizer(texts, return_tensors="pt", padding=True, truncation=True).to(
         "cuda"
@@ -90,6 +103,7 @@ def make_prediction(
         max_new_tokens=max_new_tokens,
     )
     return tokenizer.batch_decode(predicted)
+
 
 def load_pdf_data(path: str, reject: float = 0.2, take_n=2048, n_sentence=250):
     document = Document(path)
@@ -101,14 +115,22 @@ def load_pdf_data(path: str, reject: float = 0.2, take_n=2048, n_sentence=250):
     texts = ["\n".join(texts[i : i + n_sentence]) for i in index]
     return texts
 
-def make_document_prediction(path: str, batch_size: int = 8, file_name: str = "document", reject: float = 0.2, take_n=2048, n_sentence=250):
+
+def make_document_prediction(
+    path: str,
+    batch_size: int = 8,
+    file_name: str = "document",
+    reject: float = 0.2,
+    take_n=2048,
+    n_sentence=250,
+):
     folder = os.path.join("data/generated_qa/", file_name)
     os.makedirs(folder, exist_ok=True)
-    
+
     texts = load_pdf_data(path, reject, take_n, n_sentence)
     model, tokenizer = load_model()
     for i in tqdm(range(0, len(texts), batch_size)):
-        text = texts[i: i+batch_size]
+        text = texts[i : i + batch_size]
         llm_answers = make_prediction(model, tokenizer, text)
         list(map(lambda x: save_text(x, folder), llm_answers))
         gc.collect()
