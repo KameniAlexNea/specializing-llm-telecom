@@ -1,14 +1,14 @@
 import gc
-from docx import Document
-from tqdm import tqdm
-from unsloth import FastLanguageModel
-import torch
-from transformers import AutoTokenizer
-from peft import PeftModelForCausalLM
-import random
 import os
+import random
 import uuid
 
+import torch
+from docx import Document
+from peft import PeftModelForCausalLM
+from tqdm import tqdm
+from transformers import AutoTokenizer
+from unsloth import FastLanguageModel
 
 max_new_tokens = 2048
 max_seq_length = 4096  # Choose any! We auto support RoPE Scaling internally!
@@ -18,7 +18,9 @@ dtype = (
 load_in_4bit = True  # Use 4bit quantization to reduce memory usage. Can be False.
 NUM_QUESTIONS = 5
 
-MODEL_PATH = "unsloth/llama-3-8b-Instruct-bnb-4bit"  # "unsloth/llama-3-8b-Instruct-bnb-4bit"
+MODEL_PATH = (
+    "unsloth/llama-3-8b-Instruct-bnb-4bit"  # "unsloth/llama-3-8b-Instruct-bnb-4bit"
+)
 
 QUERY = """
 Please generate <num_questions>{NUM_QUESTIONS}</num_questions> questions based on the provided context.
@@ -42,7 +44,9 @@ Output each complete question with its answer options and correct answer inside 
 "answer": "option X: Correct answer text",
 </qa>
 
-Generate all the questions one after another until you have created the requested number based on the context provided. Do not repeat questions.
+Generate all the questions one after another until you have created the requested number based on the context provided. 
+Do not repeat questions. If possible, avoid using "What is the purpose" while formulating question. 
+Context has been randomly extracted from document so, number at the beginning of the text may be related to section number, and directly related to the context
 
 Here is the context to generate questions from:
 
@@ -108,7 +112,7 @@ def make_prediction(
 def load_pdf_data(path: str, reject: float = 0.2, take_n=2048, n_sentence=250):
     document = Document(path)
     texts = [par.text for par in document.paragraphs]
-    texts = texts[int(len(texts) * reject) :]
+    texts = texts[int(len(texts) * reject) : -int(len(texts) * reject / 3)]
     take_n = min(int((len(texts) - n_sentence) * 0.75), take_n)
 
     index = random.sample(range(len(texts) - n_sentence), take_n)

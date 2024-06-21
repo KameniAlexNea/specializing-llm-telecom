@@ -1,7 +1,3 @@
-# %%
-
-
-# %%
 import os
 
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
@@ -14,13 +10,14 @@ os.environ["WANDB_NOTEBOOK_NAME"] = "qa_telcom"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
 
-# %%
-from unsloth import FastLanguageModel
 import torch
+from transformers import TrainingArguments
 from trl import SFTTrainer
-from transformers import TrainingArguments, Seq2SeqTrainingArguments
+from unsloth import FastLanguageModel
 
-# %%
+from zindi_llm.dataset import load_datasets
+
+
 max_seq_length = 2048  # Choose any! We auto support RoPE Scaling internally!
 dtype = (
     None  # None for auto detection. Float16 for Tesla T4, V100, Bfloat16 for Ampere+
@@ -36,7 +33,7 @@ model, tokenizer = FastLanguageModel.from_pretrained(
     # token = "hf_...", # use one if using gated models like meta-llama/Llama-2-7b-hf
 )
 
-# %%
+
 model = FastLanguageModel.get_peft_model(
     model,
     r=16,  # Choose any number > 0 ! Suggested 8, 16, 32, 64, 128
@@ -59,21 +56,16 @@ model = FastLanguageModel.get_peft_model(
     loftq_config=None,  # And LoftQ
 )
 
-# %%
+
 print(model)
 
-# %%
-from datasets import Dataset
-from zindi_llm.dataset import load_datasets
-
-# %%
 train_ds, val_ds, test_ds = load_datasets(True, True)
 print(len(train_ds), len(val_ds), len(test_ds))
 
-# %%
+
 print(train_ds[:5])
 
-# %%
+
 alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
 
 ### Instruction:
@@ -120,21 +112,20 @@ def formatting_prompts_func(examples: dict[str, str]):
     }
 
 
-# %%
 train_ds = train_ds.map(formatting_prompts_func, batched=True)
 val_ds = val_ds.map(formatting_prompts_func, batched=True)
 test_ds = test_ds.map(formatting_prompts_func, batched=True)
 
-# %%
+
 print(train_ds)
 
-# %%
+
 print(val_ds)
 
-# %%
+
 print(val_ds[:5]["text"])
 
-# %%
+
 trainer = SFTTrainer(
     model=model,
     tokenizer=tokenizer,
@@ -171,7 +162,7 @@ trainer = SFTTrainer(
     ),
 )
 
-# %%
+
 # @title Show current memory stats
 gpu_stats = torch.cuda.get_device_properties(0)
 start_gpu_memory = round(torch.cuda.max_memory_reserved() / 1024 / 1024 / 1024, 3)
@@ -179,17 +170,17 @@ max_memory = round(gpu_stats.total_memory / 1024 / 1024 / 1024, 3)
 print(f"GPU = {gpu_stats.name}. Max memory = {max_memory} GB.")
 print(f"{start_gpu_memory} GB of memory reserved.")
 
-# %%
+
 trainer.evaluate()
 
-# %%
+
 trainer_stats = trainer.train()
 
-# %%
+
 print(trainer_stats.metrics)
 
-# %%
+
 trainer.evaluate()
 
-# %%
+
 # trainer.evaluate(test_ds, metric_key_prefix="test")

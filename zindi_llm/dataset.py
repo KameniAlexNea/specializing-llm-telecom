@@ -1,6 +1,13 @@
 import json
+
 from datasets import Dataset
-from zindi_llm import TRAINING_PATH, TESTING_PATH, EXTRA_DATA, TESTING_KNOWLEDGE
+
+from zindi_llm import (
+    EXTRA_DATA,
+    TESTING_KNOWLEDGE,
+    TESTING_PATH,
+    TRAINING_PATH,
+)
 
 
 def create_dataset(data: dict):
