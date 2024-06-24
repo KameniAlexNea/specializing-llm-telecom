@@ -1,5 +1,7 @@
 import os
 
+from zindi_llm.utils import load_generated_dataset
+
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 os.environ["WANDB_PROJECT"] = "qa_telcom"
@@ -59,71 +61,17 @@ model = FastLanguageModel.get_peft_model(
 
 print(model)
 
-train_ds, val_ds, test_ds = load_datasets(True, True)
+train_ds, val_ds, test_ds = load_generated_dataset()
 print(len(train_ds), len(val_ds), len(test_ds))
 
 
 print(train_ds[:5])
 
 
-alpaca_prompt = """Below is an instruction that describes a task, paired with an input that provides further context. Write a response that appropriately completes the request.
-
-### Instruction:
-{}
-
-### Input:
-{}
-
-### Response:
-{}"""
-
-OPTIONS = [f"option {i}" for i in range(1, 6)]
-EOS_TOKEN = tokenizer.eos_token  # Must add EOS_TOKEN
-
-
-def formatting_prompts_func(examples: dict[str, str]):
-    def apply_one(question, answer, category, *options):
-        instructions = f"Domain: {category}: {question}"
-        inputs = "\n".join(
-            [
-                (f"option {i}: " + text)
-                for i, text in enumerate(options, start=1)
-                if text is not None
-            ]
-        )
-        outputs = answer
-        return alpaca_prompt.format(instructions, inputs, outputs)
-
-    texts = [
-        apply_one(question, answer, category, *options)
-        for question, answer, category, *options in zip(
-            examples["question"],
-            examples["answer"],
-            examples["category"],
-            examples["option 1"],
-            examples["option 2"],
-            examples["option 3"],
-            examples["option 4"],
-            examples["option 5"],
-        )
-    ]
-    return {
-        "text": texts,
-    }
-
-
-train_ds = train_ds.map(formatting_prompts_func, batched=True)
-val_ds = val_ds.map(formatting_prompts_func, batched=True)
-test_ds = test_ds.map(formatting_prompts_func, batched=True)
-
-
 print(train_ds)
 
 
 print(val_ds)
-
-
-print(val_ds[:5]["text"])
 
 
 trainer = SFTTrainer(
@@ -136,7 +84,7 @@ trainer = SFTTrainer(
     dataset_num_proc=2,
     packing=False,  # Can make training 5x faster for short sequences.
     args=TrainingArguments(
-        output_dir="data/models/All",
+        output_dir="data/models/generated",
         run_name="qa_telcom",
         per_device_train_batch_size=2,
         gradient_accumulation_steps=4,
