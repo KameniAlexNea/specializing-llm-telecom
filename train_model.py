@@ -1,7 +1,5 @@
 import os
 
-from zindi_llm.utils import load_generated_dataset
-
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 
 os.environ["WANDB_PROJECT"] = "qa_telcom"
@@ -17,7 +15,8 @@ from transformers import TrainingArguments
 from trl import SFTTrainer
 from unsloth import FastLanguageModel
 
-from zindi_llm.dataset import load_datasets
+# from zindi_llm.dataset import load_datasets
+from zindi_llm.utils import load_generated_dataset
 
 
 max_seq_length = 2048  # Choose any! We auto support RoPE Scaling internally!
@@ -66,7 +65,6 @@ print(len(train_ds), len(val_ds), len(test_ds))
 
 
 print(train_ds[:5])
-
 
 print(train_ds)
 
@@ -120,15 +118,10 @@ print(f"{start_gpu_memory} GB of memory reserved.")
 
 
 trainer.evaluate()
-
-
 trainer_stats = trainer.train()
-
+trainer.evaluate()
 
 print(trainer_stats.metrics)
-
-
-trainer.evaluate()
 
 
 # trainer.evaluate(test_ds, metric_key_prefix="test")

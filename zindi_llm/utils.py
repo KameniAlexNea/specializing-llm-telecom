@@ -20,6 +20,8 @@ Your task is to analyze questions and select the most appropriate answer from gi
 
 
 def prepare_text(examples: dict[str, str]):
+    if 'question' not in examples:
+        return examples
     def apply_one(question, answer, *options):
         options = [i for i in options if i is not None]
         index = list(range(len(options)))
@@ -56,11 +58,11 @@ def prepare_text(examples: dict[str, str]):
 
 def load_generated_dataset():
     FOLDER = "data/full_data/"
-    generated = pd.read_csv(FOLDER + "generated_v1.csv")
-    train = pd.read_csv(FOLDER + "train_data.csv")
+    generated = pd.read_csv(FOLDER + "generated_v1.csv", keep_default_na=False)
+    train = pd.read_csv(FOLDER + "train_data.csv", keep_default_na=False)
     data = pd.concat([train, generated], ignore_index=True)
 
-    test_df = pd.read_csv(FOLDER + "test_data.csv")
+    test_df = pd.read_csv(FOLDER + "test_data.csv", keep_default_na=False)
 
     train = Dataset.from_pandas(data).with_transform(prepare_text)
     test = Dataset.from_pandas(test_df).with_transform(prepare_text)
