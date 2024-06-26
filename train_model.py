@@ -16,7 +16,7 @@ from trl import SFTTrainer
 from unsloth import FastLanguageModel
 
 # from zindi_llm.dataset import load_datasets
-from zindi_llm.utils import load_generated_dataset
+from zindi_llm.utils import load_generated_dataset, prepare_text
 
 
 max_seq_length = 2048  # Choose any! We auto support RoPE Scaling internally!
@@ -77,10 +77,11 @@ trainer = SFTTrainer(
     tokenizer=tokenizer,
     train_dataset=train_ds,
     eval_dataset=val_ds,
-    dataset_text_field="text",
+    # dataset_text_field="text",
     max_seq_length=max_seq_length,
     dataset_num_proc=2,
-    packing=False,  # Can make training 5x faster for short sequences.
+    formatting_func=prepare_text,
+    packing=False,  # False Can make training 5x faster for short sequences.
     args=TrainingArguments(
         output_dir="data/models/generated",
         run_name="qa_telcom",
