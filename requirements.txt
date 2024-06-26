@@ -1,0 +1,11 @@
+matplotlib 
+pickleshare 
+pandas 
+numpy 
+python-docx
+langchain
+openai
+langchain-openai
+langchain-community # chatopenai
+langchain-experimental
+llama-index
