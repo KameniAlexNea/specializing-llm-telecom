@@ -1,11 +1,12 @@
-import gc
 import os
-
-from tqdm import tqdm
-
 os.environ["TOKENIZERS_PARALLELISM"] = "true"
 os.environ["CUDA_DEVICE_ORDER"] = "PCI_BUS_ID"
 os.environ["CUDA_VISIBLE_DEVICES"] = "0"
+
+import gc
+from glob import glob
+from tqdm import tqdm
+
 from zindi_llm.qa_generation import (
     load_model,
     load_pdf_data,
@@ -36,13 +37,13 @@ def make_document_prediction(
         gc.collect()
 
 
-files = [
-    "data/zindi_data/rel18/rel_17.docx"
-]  # sorted(glob("data/zindi_data/rel18/*i*.docx"))
+files = sorted(glob("data/zindi_data/rel18/*.docx"))
 
-for file in tqdm(files[:]):
+print(files[:5])
+
+for file in tqdm(files[3:]):
     name = os.path.basename(file).replace(".docx", "")
     make_document_prediction(
-        file, file_name=name, batch_size=8, n_sentence=75, take_n=32
+        file, file_name=name, batch_size=10, n_sentence=75, take_n=20
     )
     gc.collect()
