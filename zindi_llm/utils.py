@@ -1,5 +1,5 @@
 import random
-import json
+
 import pandas as pd
 from datasets import Dataset
 
@@ -20,15 +20,19 @@ Your task is to analyze questions and select the most appropriate answer from gi
 
 
 def prepare_text(examples: dict[str, str]):
-    if 'question' not in examples:
+    if "question" not in examples:
         return examples
+
     def apply_one(question, answer, *options):
         options = [i for i in options if i is not None]
         index = list(range(len(options)))
         random.shuffle(index)
-        option_text = "\n".join(f"option {j+1}: " + options[i] for j, i in enumerate(index))
+        option_text = "\n".join(
+            f"option {j+1}: " + options[i] for j, i in enumerate(index)
+        )
         response = f"option {index.index(answer - 1) + 1}: " + options[answer - 1]
         return alpaca_prompt.format(str(question), option_text, response)
+
     if isinstance(examples["question"], str):
         return apply_one(
             examples["question"],
@@ -52,7 +56,6 @@ def prepare_text(examples: dict[str, str]):
         )
     ]
     return texts
-    
 
 
 def load_generated_dataset():
@@ -63,8 +66,8 @@ def load_generated_dataset():
 
     test_df = pd.read_csv(FOLDER + "test_data.csv", keep_default_na=False)
 
-    train = Dataset.from_pandas(data) # .with_transform(prepare_text)
-    test = Dataset.from_pandas(test_df) # .with_transform(prepare_text)
+    train = Dataset.from_pandas(data)  # .with_transform(prepare_text)
+    test = Dataset.from_pandas(test_df)  # .with_transform(prepare_text)
 
-    train = train.train_test_split(test_size=0.05, seed=2333) # try random generation
+    train = train.train_test_split(test_size=0.05, seed=2333)  # try random generation
     return train["train"], train["test"], test

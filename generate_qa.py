@@ -1,6 +1,5 @@
 import gc
 import os
-from glob import glob
 
 from tqdm import tqdm
 
@@ -14,6 +13,7 @@ from zindi_llm.qa_generation import (
     save_text,
 )
 
+SAVE_FOLDER = "data/generated_qa/QCM_Context"
 model, tokenizer = load_model()
 
 
@@ -25,7 +25,7 @@ def make_document_prediction(
     take_n=2048,
     n_sentence=250,
 ):
-    folder = os.path.join("data/generated_qa/adjusted/", file_name)
+    folder = os.path.join(SAVE_FOLDER, file_name)
     os.makedirs(folder, exist_ok=True)
 
     texts = load_pdf_data(path, reject, take_n, n_sentence)
@@ -36,11 +36,13 @@ def make_document_prediction(
         gc.collect()
 
 
-files = sorted(glob("data/zindi_data/rel18/*i*.docx"))
+files = [
+    "data/zindi_data/rel18/rel_17.docx"
+]  # sorted(glob("data/zindi_data/rel18/*i*.docx"))
 
-for file in tqdm(files[24:]):
+for file in tqdm(files[:]):
     name = os.path.basename(file).replace(".docx", "")
     make_document_prediction(
-        file, file_name=name, batch_size=8, n_sentence=70, take_n=24
+        file, file_name=name, batch_size=8, n_sentence=75, take_n=32
     )
     gc.collect()

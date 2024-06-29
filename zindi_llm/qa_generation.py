@@ -1,6 +1,7 @@
 import gc
 import os
 import random
+import re
 import uuid
 
 import torch
@@ -23,30 +24,39 @@ MODEL_PATH = (
 )
 
 QUERY = """
-Please generate <num_questions>{NUM_QUESTIONS}</num_questions> questions based on the provided context.
+Please generate <num_questions>{NUM_QUESTIONS}</num_questions> questions based on the provided context about 3GPP (3rd Generation Partnership Project, standards for 3G (third generation), 4G (fourth generation), and 5G (fifth generation) mobile networks).
 
-Read the context carefully and create questions that can be clearly answered using only the information provided. Do not make questions that would require outside knowledge to answer.
+Carefully analyze the given context and create questions that can be unambiguously answered using only the information provided. Avoid questions that would require external knowledge to answer.
 
 For each question you create:
-- Write out the question text inside "question" quotes 
-- Generate 5 possible answer options and list them out as "option 1", "option 2", etc. Make sure the incorrect options are plausible based on the context.
-- Specify the correct answer inside "answer" quotes, referring to the option number
+- Enclose the question text within "question" quotes.
+- Generate 5 plausible answer options based on the context, labeling them as "option 1", "option 2", etc.
+- Indicate the correct answer inside "answer" quotes, referencing the option number.
+- Provide a short reformulated explanation supporting the correct answer within "explanation" quotes.
 
 Output each complete question with its answer options and correct answer inside <qa> tags, using this format:
 
 <qa>
-"question": "Question text goes here",
-"option 1": "First answer option",
-"option 2": "Second answer option", 
-"option 3": "Third answer option",
-"option 4": "Fourth answer option",
-"option 5": "Fifth answer option",
-"answer": "option X: Correct answer text",
+question: Question text goes here
+option 1: First answer option
+option 2: Second answer option
+option 3: Third answer option
+option 4: Fourth answer option
+option 5: Fifth answer option
+answer: option X: correct answer text
+explanation: Brief reformulated explanation supporting the correct answer
 </qa>
 
-Generate all the questions one after another until you have created the requested number based on the context provided. 
-Do not repeat questions. If possible, avoid using "What is the purpose" while formulating question. 
-Context has been randomly extracted from document so, number at the beginning of the text may be related to section number, and directly related to the context
+Additional guidelines:
+- Generate unique questions without repetition.
+- Avoid overusing phrases like "What is the purpose of..." when formulating questions.
+- Create diverse question types (e.g., multiple-choice, true/false, fill-in-the-blank) to test different aspects of understanding.
+- The context has been randomly extracted from the document so, number at the beginning of the text may be related to the section number, and not directly related to the context.
+- Focus on key concepts, technologies, and processes related to 3GPP mentioned in the context.
+- Include questions about specific standards, releases, or technical specifications if mentioned.
+- When appropriate, ask about relationships between different elements or compare and contrast various aspects of 3GPP.
+- Avoid adding extra text at the end or the beginning of the generation.
+- Avoid using expressions like "The context mentions" or "According to the context" in the explanation tag. Reformulate and make it clear instead.
 
 Here is the context to generate questions from:
 
@@ -109,9 +119,30 @@ def make_prediction(
     return tokenizer.batch_decode(predicted)
 
 
+def process_document(text: str):
+    text = text.strip()
+    # Define the regex patterns
+    link_pattern = r"(https?://\S+)"
+    reference_pattern = r"^\[\d+\]\s*[^\n]+$"
+
+    # Extract links
+    links = re.findall(link_pattern, text)
+    for link in links:
+        text = text.replace(link, "[link]")
+
+    # Remove reference lines
+    text = re.sub(reference_pattern, "", text, flags=re.MULTILINE)
+
+    # Clean up any remaining empty lines
+    text = re.sub(r"\n+", "\n", text).strip()
+
+    return text.strip()
+
+
 def load_pdf_data(path: str, reject: float = 0.2, take_n=2048, n_sentence=250):
     document = Document(path)
-    texts = [par.text for par in document.paragraphs]
+    texts = [process_document(par.text) for par in document.paragraphs]
+    texts = [i for i in texts if len(i)]
     texts = texts[int(len(texts) * reject) : -int(len(texts) * reject / 3)]
     take_n = min(int((len(texts) - n_sentence) * 0.75), take_n)
 
