@@ -166,3 +166,4 @@ data
 *.out
 wandb
 TestCode.ipynb
+launch_docker.sh

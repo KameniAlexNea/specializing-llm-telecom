@@ -41,9 +41,11 @@ files = sorted(glob("data/zindi_data/rel18/*.docx"))
 
 print(files[:5])
 
-for file in tqdm(files[3:]):
+for file in tqdm(files[218:]):
     name = os.path.basename(file).replace(".docx", "")
+    if os.path.exists(os.path.join(SAVE_FOLDER, name)):
+        continue
     make_document_prediction(
-        file, file_name=name, batch_size=10, n_sentence=75, take_n=20
+        file, file_name=name, batch_size=8, n_sentence=70, take_n=16
     )
     gc.collect()
